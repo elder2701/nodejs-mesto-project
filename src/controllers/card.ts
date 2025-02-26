@@ -25,7 +25,7 @@ export const createCard = async (
     const { _id: owner } = res.locals.user;
     const card = await Card.create({ name, link, owner });
 
-    res.send(card);
+    res.status(201).send(card);
   } catch (error) {
     if (error instanceof MongooseError.ValidationError) {
       next(new BadRequestError('Не верные данные для создания карточки'));
@@ -43,7 +43,7 @@ export const deleteCard = async (
   try {
     const { cardId } = req.params;
     const { _id: owner } = res.locals.user;
-    const card = Card
+    const card = await Card
       .findOneAndDelete({ _id: cardId, owner })
       .orFail(() => new NotFoundError('Карточка не найдена'));
 
@@ -74,11 +74,12 @@ export const likeCard = async (
 export const dislikeCard = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { cardId } = req.params;
+    const { _id: likes } = res.locals.user;
     const card = await Card
-      .findByIdAndUpdate(cardId, { $pull: { likes: res.locals.user._id } }, { new: true })
+      .findByIdAndUpdate(cardId, { $pull: { likes } }, { new: true })
       .orFail(() => new NotFoundError('Карточка не найдена'));
 
-    next(card);
+    res.send(card);
   } catch (error) {
     next(error);
   }

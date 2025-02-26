@@ -4,6 +4,7 @@ import usersRouters from './routers/user';
 import cardsRouters from './routers/card';
 import { AuthContext } from './types/auth-context';
 import errorHandler from './middleware/error-handler';
+import NotFoundError from './errors/not-found-error';
 
 const PORT = 3000;
 const MONGO_URL = 'mongodb://localhost:27017/mestodb';
@@ -23,6 +24,10 @@ app.use((_req: Request, res: Response<unknown, AuthContext>, next) => {
 
 app.use('/users', usersRouters);
 app.use('/cards', cardsRouters);
+
+app.use((_req, _res, next) => {
+  next(new NotFoundError('Not Found'));
+});
 
 app.use(errorHandler);
 

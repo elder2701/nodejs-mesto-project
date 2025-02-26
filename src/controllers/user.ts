@@ -33,7 +33,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     const { name, about, avatar } = req.body;
     const user = await User.create({ name, about, avatar });
 
-    res.send(user);
+    res.status(201).send(user);
   } catch (error) {
     if (error instanceof MongooseError.ValidationError) {
       next(new BadRequestError('Не верные данные для создания пользователя'));
