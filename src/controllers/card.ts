@@ -45,16 +45,21 @@ export const deleteCard = async (
     const { cardId } = req.params;
     const { _id: owner } = res.locals.user;
     const card = await Card
-      .findOneAndDelete({ _id: cardId })
-      .orFail(() => new NotFoundError('Карточка не найдена'));
+      .findOne({ _id: cardId }).orFail(() => new NotFoundError('Карточка не найдена'));
 
     if (card.owner.toString() !== owner) {
       throw new ForbiddenRequestError('Невозможно удалить чужую карточку');
     }
 
+    await Card.deleteOne({ _id: cardId });
+
     res.send(card);
   } catch (error) {
-    next(error);
+    if (error instanceof MongooseError.CastError) {
+      next(new BadRequestError('Не верный id карточки'));
+    } else {
+      next(error);
+    }
   }
 };
 
@@ -72,7 +77,11 @@ export const likeCard = async (
 
     res.send(card);
   } catch (error) {
-    next(error);
+    if (error instanceof MongooseError.CastError) {
+      next(new BadRequestError('Не верный id карточки'));
+    } else {
+      next(error);
+    }
   }
 };
 
@@ -90,6 +99,10 @@ export const dislikeCard = async (
 
     res.send(card);
   } catch (error) {
-    next(error);
+    if (error instanceof MongooseError.CastError) {
+      next(new BadRequestError('Не верный id карточки'));
+    } else {
+      next(error);
+    }
   }
 };

@@ -19,10 +19,6 @@ export const login = async (
     const { email, password } = req.body;
     const user = await User.findOne({ email }).select('+password').orFail(() => new UnauthorizedError());
 
-    if (!user) {
-      throw new UnauthorizedError();
-    }
-
     const isCorrectPassword = await bcrypt.compare(password, user.password);
 
     if (!isCorrectPassword) {
@@ -62,7 +58,11 @@ export const getUser = async (
 
     res.send(user);
   } catch (error) {
-    next(error);
+    if (error instanceof MongooseError.CastError) {
+      next(new BadRequestError('Не верный id карточки'));
+    } else {
+      next(error);
+    }
   }
 };
 
@@ -93,24 +93,15 @@ export const createUser = async (
 };
 
 export const updateUser = async (
-  req: Request<unknown, unknown, Partial<IUser>>,
+  req: Request<unknown, unknown, Pick<IUser, 'name' | 'about'>>,
   res: Response<unknown, AuthContext>,
   next: NextFunction,
 ) => {
   try {
     const { _id: id } = res.locals.user;
-    let userInfo: Partial<IUser>;
-
-    if (req.body.password) {
-      const hash = await bcrypt.hash(req.body.password, SALT);
-      userInfo = { ...req.body, password: hash };
-    } else {
-      userInfo = { ...req.body };
-    }
 
     const user = await User
-      .findByIdAndUpdate(id, userInfo, { new: true, runValidators: true })
-      .orFail(() => new NotFoundError('Пользователь не найден'));
+      .findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
 
     res.send(user);
   } catch (error) {
@@ -131,8 +122,7 @@ export const updateUserAvatar = async (
     const { avatar } = req.body;
     const { _id: id } = res.locals.user;
     const user = await User
-      .findByIdAndUpdate(id, { avatar }, { new: true, runValidators: true })
-      .orFail(() => new NotFoundError('Пользователь не найден'));
+      .findByIdAndUpdate(id, { avatar }, { new: true, runValidators: true });
 
     res.send(user);
   } catch (error) {
@@ -151,9 +141,7 @@ export const getUserInfo = async (
 ) => {
   try {
     const { _id: id } = res.locals.user;
-    const user = await User
-      .findById(id)
-      .orFail(() => new NotFoundError('Пользователь не найден'));
+    const user = await User.findById(id);
 
     res.send(user);
   } catch (error) {

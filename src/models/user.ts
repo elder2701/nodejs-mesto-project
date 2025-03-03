@@ -1,6 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { isEmail } from 'validator';
-import isUrl from '../utils/custom-url-validator';
+import { isUrl } from '../utils/validators/custom-url-validator';
 
 export interface IUser {
   name: string;
